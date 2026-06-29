@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>摇一摇挑战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;user-select:none;-webkit-user-select:none}
+body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:#fff}
+
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.95)}
+
+/* ===== 开始页 ===== */
+#startScreen .logo{font-size:72px;margin-bottom:16px;animation:bounce 1.5s ease-in-out infinite}
+#startScreen h1{font-size:32px;font-weight:800;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,.2)}
+#startScreen .subtitle{font-size:16px;opacity:.85;margin-bottom:48px}
+.start-btn{background:#fff;color:#764ba2;border:none;padding:18px 56px;font-size:22px;font-weight:700;border-radius:50px;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:transform .15s,box-shadow .15s}
+.start-btn:active{transform:scale(.93);box-shadow:0 4px 15px rgba(0,0,0,.2)}
+
+/* 时长选择 */
+.duration-picker{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap;justify-content:center}
+.duration-btn{background:rgba(255,255,255,.15);color:#fff;border:2px solid rgba(255,255,255,.3);padding:8px 18px;font-size:15px;font-weight:600;border-radius:24px;cursor:pointer;transition:all .2s}
+.duration-btn.active{background:#fff;color:#764ba2;border-color:#fff;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.duration-btn:active{transform:scale(.92)}
+
+.rules{margin-top:24px;font-size:14px;opacity:.75;text-align:center;line-height:1.8}
+
+/* ===== 计时页 ===== */
+#gameScreen{display:none}
+#gameScreen.active{display:flex}
+.timer-label{font-size:15px;opacity:.8;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.timer{font-size:64px;font-weight:900;font-variant-numeric:tabular-nums;text-shadow:0 2px 15px rgba(0,0,0,.25);margin-bottom:8px;transition:color .3s}
+.timer.urgent{color:#ffd6d6;animation:pulse .5s ease-in-out infinite}
+.shake-icon{font-size:64px;margin:20px 0;transition:transform .1s}
+.shake-icon.shaking{animation:shakeAnim .3s ease}
+.count-label{font-size:16px;opacity:.8;margin-bottom:4px}
+.count{font-size:96px;font-weight:900;font-variant-numeric:tabular-nums;text-shadow:0 2px 20px rgba(0,0,0,.3);line-height:1}
+.count.pop{animation:pop .2s ease}
+.hint{margin-top:24px;font-size:14px;opacity:.6}
+
+/* ===== 结果页 ===== */
+#resultScreen{display:none}
+#resultScreen.active{display:flex}
+#resultScreen .trophy{font-size:80px;margin-bottom:16px}
+#resultScreen h2{font-size:28px;font-weight:800;margin-bottom:32px}
+.result-count{font-size:120px;font-weight:900;line-height:1;text-shadow:0 2px 25px rgba(0,0,0,.3);margin-bottom:8px}
+.result-unit{font-size:20px;opacity:.85;margin-bottom:8px}
+.result-grade{font-size:18px;font-weight:600;padding:8px 28px;border-radius:30px;margin-bottom:40px}
+.again-btn{background:#fff;color:#764ba2;border:none;padding:16px 48px;font-size:20px;font-weight:700;border-radius:50px;cursor:pointer;box-shadow:0 6px 25px rgba(0,0,0,.2);transition:transform .15s}
+.again-btn:active{transform:scale(.93)}
+
+/* ===== 动画 ===== */
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes shakeAnim{0%{transform:rotate(0)}25%{transform:rotate(-18deg) translateX(-6px)}75%{transform:rotate(18deg) translateX(6px)}100%{transform:rotate(0)}}
+
+/* 实时进度条 */
+.progress-bar{width:70%;max-width:300px;height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:32px;overflow:hidden}
+.progress-fill{height:100%;background:#fff;border-radius:3px;transition:width .3s linear;width:100%}
+</style>
+</head>
+<body>
+
+<!-- ===== 开始页 ===== -->
+<div class="screen" id="startScreen">
+  <div class="logo">📳</div>
+  <h1>摇一摇挑战</h1>
+  <p class="subtitle">选择时长，看你能摇多少下</p>
+  <div class="duration-picker">
+    <button class="duration-btn" data-dur="10">10秒</button>
+    <button class="duration-btn" data-dur="20">20秒</button>
+    <button class="duration-btn active" data-dur="30">30秒</button>
+    <button class="duration-btn" data-dur="60">60秒</button>
+    <button class="duration-btn" data-dur="100">100秒</button>
+  </div>
+  <button class="start-btn" id="startBtn">开 始 挑 战</button>
+  <div class="rules">
+    📱 用力摇晃手机即可计数<br>
+    ⏱️ 时间到自动出成绩
+  </div>
+</div>
+
+<!-- ===== 计时页 ===== -->
+<div class="screen hidden" id="gameScreen">
+  <div class="timer-label">剩余时间</div>
+  <div class="timer" id="timer">60</div>
+  <div class="shake-icon" id="shakeIcon">📱</div>
+  <div class="count-label">已摇次数</div>
+  <div class="count" id="count">0</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="hint">用力摇动手机吧！</div>
+</div>
+
+<!-- ===== 结果页 ===== -->
+<div class="screen hidden" id="resultScreen">
+  <div class="trophy" id="trophy">🏆</div>
+  <h2>挑战结束！</h2>
+  <div class="result-count" id="resultCount">0</div>
+  <div class="result-unit" id="resultUnit">下 / 30秒</div>
+  <div class="result-rate" id="resultRate" style="font-size:16px;opacity:.8;margin-bottom:16px">平均 0.0 次/秒</div>
+  <div class="result-grade" id="resultGrade">评级</div>
+  <button class="again-btn" id="againBtn">再 来 一 次</button>
+</div>
+
+<script>
+(function(){
+  var DURATION = 30;          // 倒计时秒数（默认30）
+  var SHAKE_THRESHOLD = 14;   // 摇动加速度阈值
+  var SHAKE_REST = 7;         // 回到静止的阈值（低于此值才算一次完整摇动结束）
+  var MAX_SHAKE_DURATION = 600; // 一次摇动最长持续 (ms)
+
+  var count = 0;
+  var displayCount = 0;
+  var timeLeft = DURATION;
+  var isPlaying = false;
+  var lastAcc = null;
+  var isShaking = false;      // 是否正在摇动中
+  var shakeStartTime = 0;     // 本次摇动开始时间
+  var timerInterval = null;
+  var updateRAF = null;
+
+  var startScreen  = document.getElementById('startScreen');
+  var gameScreen   = document.getElementById('gameScreen');
+  var resultScreen = document.getElementById('resultScreen');
+  var timerEl      = document.getElementById('timer');
+  var countEl      = document.getElementById('count');
+  var progressEl   = document.getElementById('progressFill');
+  var shakeIcon    = document.getElementById('shakeIcon');
+  var resultCountEl= document.getElementById('resultCount');
+  var resultUnitEl = document.getElementById('resultUnit');
+  var resultRateEl = document.getElementById('resultRate');
+  var resultGradeEl= document.getElementById('resultGrade');
+  var trophyEl     = document.getElementById('trophy');
+  var durationBtns = document.querySelectorAll('.duration-btn');
+
+  /* ---------- 屏幕切换 ---------- */
+  function show(el){
+    el.classList.remove('hidden');
+    el.classList.add('active');
+  }
+  function hide(el){
+    el.classList.add('hidden');
+    el.classList.remove('active');
+  }
+
+  /* ---------- 请求传感器权限（iOS 13+ 必须用户手势触发） ---------- */
+  function requestPermission(cb){
+    if(typeof DeviceMotionEvent !== 'undefined' &&
+       typeof DeviceMotionEvent.requestPermission === 'function'){
+      DeviceMotionEvent.requestPermission().then(function(state){
+        cb(state === 'granted');
+      }).catch(function(){
+        cb(false);
+      });
+    } else {
+      // Android / 旧iOS 直接可用
+      cb(true);
+    }
+  }
+
+  /* ---------- 完整的摇一摇检测 ----------
+     手工摇：一次完整摇动 = 从静止 → 超过阈值 → 回到静止，避免同个动作重复计
+     外挂注入：加速度差值极大(>40)，直接计，跳过状态机
+   ---------- */
+  function onDeviceMotion(e){
+    if(!isPlaying) return;
+    var acc = e.accelerationIncludingGravity;
+    if(!acc) return;
+
+    var x = acc.x || 0, y = acc.y || 0, z = acc.z || 0;
+
+    if(!lastAcc){
+      lastAcc = {x:x, y:y, z:z};
+      return;
+    }
+
+    var dx = x - lastAcc.x;
+    var dy = y - lastAcc.y;
+    var dz = z - lastAcc.z;
+    var delta = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    lastAcc = {x:x, y:y, z:z};
+
+    // 作弊注入：差值极大（>40），直接计，不受状态机限制
+    if(delta > 40){
+      count++;
+      return;
+    }
+
+    // 正常手工摇：状态机计数，一次完整动作只计一次
+    var now = Date.now();
+    if(!isShaking){
+      if(delta > SHAKE_THRESHOLD){
+        isShaking = true;
+        shakeStartTime = now;
+      }
+    } else {
+      if(delta < SHAKE_REST || (now - shakeStartTime > MAX_SHAKE_DURATION)){
+        isShaking = false;
+        count++;
+      }
+    }
+  }
+
+  /* ---------- 按帧刷新 UI（requestAnimationFrame，60fps） ---------- */
+  function updateDisplay(){
+    if(!isPlaying) return;
+    if(count !== displayCount){
+      displayCount = count;
+      countEl.textContent = count;
+      // 动画：只在高频时跳过动画避免卡顿
+      shakeIcon.classList.remove('shaking');
+      void shakeIcon.offsetWidth;
+      shakeIcon.classList.add('shaking');
+      countEl.classList.remove('pop');
+      void countEl.offsetWidth;
+      countEl.classList.add('pop');
+      if(navigator.vibrate) navigator.vibrate(15);
+    }
+    updateRAF = requestAnimationFrame(updateDisplay);
+  }
+
+  /* ---------- 开始游戏 ---------- */
+  function startGame(){
+    requestPermission(function(granted){
+      if(!granted){
+        alert('需要授权使用运动传感器才能计数，请允许后重试。');
+        return;
+      }
+      // 读取选择的时长
+      var activeBtn = document.querySelector('.duration-btn.active');
+      if(activeBtn) DURATION = parseInt(activeBtn.getAttribute('data-dur')) || 30;
+
+      count = 0;
+      displayCount = 0;
+      timeLeft = DURATION;
+      lastAcc = null;
+      isShaking = false;
+      shakeStartTime = 0;
+      isPlaying = true;
+
+      countEl.textContent = '0';
+      timerEl.textContent = DURATION;
+      timerEl.classList.remove('urgent');
+      progressEl.style.width = '100%';
+
+      hide(startScreen);
+      hide(resultScreen);
+      show(gameScreen);
+      gameScreen.style.display = 'flex';
+
+      window.addEventListener('devicemotion', onDeviceMotion);
+      updateRAF = requestAnimationFrame(updateDisplay);
+
+      timerInterval = setInterval(function(){
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        progressEl.style.width = (timeLeft / DURATION * 100) + '%';
+
+        if(timeLeft <= 10){
+          timerEl.classList.add('urgent');
+        }
+        if(timeLeft <= 0){
+          endGame();
+        }
+      }, 1000);
+    });
+  }
+
+  /* ---------- 结束游戏 ---------- */
+  function endGame(){
+    isPlaying = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    if(updateRAF) cancelAnimationFrame(updateRAF);
+    updateRAF = null;
+    window.removeEventListener('devicemotion', onDeviceMotion);
+
+    var actualDuration = DURATION;
+    resultCountEl.textContent = count;
+    resultUnitEl.textContent = '下 / ' + actualDuration + '秒';
+    var rate = Math.round(count / actualDuration * 10) / 10;
+    resultRateEl.textContent = '平均 ' + rate + ' 次/秒';
+
+    // 评级（按速率）
+    var grade, color, emoji;
+    if(rate >= 20){          grade='🚀 火箭手！';   color='#ff6b6b'; emoji='🚀'; }
+    else if(rate >= 10){     grade='⚡ 闪电侠！';   color='#feca57'; emoji='⚡'; }
+    else if(rate >= 5){      grade='👍 不错';      color='#48dbfb'; emoji='👍'; }
+    else if(rate >= 2){      grade='🙂 继续加油';  color='#1dd1a1'; emoji='🙂'; }
+    else{                    grade='😴 还需努力';  color='#a29bfe'; emoji='😴'; }
+
+    resultGradeEl.textContent = grade;
+    resultGradeEl.style.background = color;
+    trophyEl.textContent = emoji;
+
+    hide(gameScreen);
+    gameScreen.style.display = 'none';
+    show(resultScreen);
+    resultScreen.style.display = 'flex';
+  }
+
+  /* ---------- 再来一次 ---------- */
+  function restart(){
+    hide(resultScreen);
+    resultScreen.style.display = 'none';
+    show(startScreen);
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('againBtn').addEventListener('click', restart);
+
+  // 时长选择
+  durationBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      durationBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  // 防止微信下拉露白
+  document.body.addEventListener('touchmove', function(e){
+    e.preventDefault();
+  }, {passive:false});
+
+})();
+</script>
+</body>
+</html>

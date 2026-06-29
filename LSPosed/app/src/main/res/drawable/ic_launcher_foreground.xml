@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 手机外框 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,28 L70,28 C73,28 75,30 75,33 L75,75 C75,78 73,80 70,80 L38,80 C35,80 33,78 33,75 L33,33 C33,30 35,28 38,28 Z" />
+    <!-- 手机屏幕 -->
+    <path
+        android:fillColor="#764ba2"
+        android:pathData="M40,34 L68,34 L68,70 L40,70 Z" />
+    <!-- 摇动线条左 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,48 L30,48 L30,52 L24,52 Z M22,56 L28,56 L28,60 L22,60 Z" />
+    <!-- 摇动线条右 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M78,48 L84,48 L84,52 L78,52 Z M80,56 L86,56 L86,60 L80,60 Z" />
+    <!-- 计数数字位置标记 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,44 L60,44 L60,48 L48,48 Z M48,52 L60,52 L60,56 L48,56 Z M48,60 L56,60 L56,64 L48,64 Z" />
+</vector>

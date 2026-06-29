@@ -1,0 +1,3 @@
+-keep class com.shakecheat.MainHook { *; }
+-keep class com.shakecheat.SettingsActivity { *; }
+-keep class de.robv.android.xposed.** { *; }

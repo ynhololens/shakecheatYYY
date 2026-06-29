@@ -1,0 +1,8 @@
+.workbuddy/
+LSPosed/.gradle/
+LSPosed/build/
+LSPosed/app/build/
+LSPosed/.idea/
+LSPosed/apk/
+LSPosed/local.properties
+LSPosed/gradle/wrapper/gradle-wrapper.jar
